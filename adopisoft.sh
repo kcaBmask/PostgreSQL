@@ -1,112 +1,90 @@
 #!/bin/bash
 
-# Add Official Repository
-echo "Installing required packages..."
-sudo apt install -y wget ca-certificates
+# ANSI color codes
+GREEN='\033[1;32m' # Light Green.
+NC='\033[0m'       # No Color
+RED='\033[1;31m'   # Light Red.
 
-echo "Adding PostgreSQL official repository key..."
+# Print green header
+echo -e "${GREEN}#########################################################################${NC}\\n"
+
+# Bash ASCII logo with green text and no background color
+echo -e "${GREEN}
+ __                ___.                          __    
+|  | __ ____ _____ \\_ |__   _____ _____    _____|  | __
+|  |/ // ___\\__  \\ | __ \\ /     \\__  \\  /  ___/  |/ /
+|    <\\  \\___ / __ \\| \\_\\ \\  Y Y  \\/ __ \\_\\___ \\|    < 
+|__|_ \\___  >____  /___  /__|_|  (____  /____  >__|_ \\
+     \\/    \\/     \\/    \\/      \\/     \\/     \\/     \\/
+${NC}"
+
+# Print green header
+echo -e "${GREEN}#########################################################################${NC}\\n"
+
+# Script header with green text and no background color
+echo -e "${GREEN}\n=== PostgreSQL Installation and Configuration Script ===${NC}\n"
+
+# Add Official Repository
+echo -e "${GREEN}\nInstalling required packages...${NC}"
+sudo apt update > /dev/null 2>&1
+sudo apt install -y wget ca-certificates > /dev/null 2>&1
+
+echo -e "${GREEN}\nAdding PostgreSQL official repository key...${NC}"
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 
-echo "Adding PostgreSQL official repository to sources..."
-sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+echo -e "${GREEN}\nAdding PostgreSQL official repository to sources...${NC}"
+echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee -a /etc/apt/sources.list.d/pgdg.list
+
 
 # Install Postgres
-echo "Updating package list..."
-sudo apt update
+echo -e "${GREEN}\nUpdating package list...${NC}"
+sudo apt update > /dev/null 2>&1
 
-echo "Installing PostgreSQL 12 and PostgreSQL contrib..."
-sudo apt install -y postgresql-12 postgresql-contrib
-
-echo "Checking PostgreSQL service status..."
-service postgresql status
+echo -e "${GREEN}\nInstalling PostgreSQL 12 and PostgreSQL contrib...${NC}"
+sudo apt install -y postgresql-12 postgresql-contrib > /dev/null 2>&1
 
 # Editing postgres configuration file
-echo "Editing PostgreSQL configuration file..."
-# Uncomment then edit like this listen_addresses = '*'
-nano /etc/postgresql/12/main/postgresql.conf
+echo -e "${GREEN}\nEditing PostgreSQL configuration file...${NC}"
+sudo sed -i 's/#listen_addresses = .*/listen_addresses = '\''*'\''/' /etc/postgresql/12/main/postgresql.conf
 
 # Editing access policy
-echo "Editing PostgreSQL access policy..."
-# Add Inyo Ito sa huli host all all 0.0.0.0/0 md5
-nano /etc/postgresql/12/main/pg_hba.conf
+echo -e "${GREEN}\nEditing PostgreSQL access policy...${NC}"
+echo "host all all 0.0.0.0/0 md5" | sudo tee -a /etc/postgresql/12/main/pg_hba.conf
 
 # Restart postgres
-echo "Restarting PostgreSQL service..."
-systemctl restart postgresql
-
-# Check listening port
-echo "Checking PostgreSQL listening port..."
-ss -nlt | grep 5432
+echo -e "${GREEN}\nRestarting PostgreSQL service...${NC}"
+sudo systemctl restart postgresql
 
 # Add sudo user adopisoft
-echo "Adding sudo user 'adopisoft'..."
+echo -e "${GREEN}\nAdding sudo user 'adopisoft'...${NC}"
 sudo adduser adopisoft
 
-# Switch over to Postgres account
-echo "Switching to the 'postgres' account..."
-sudo -i -u postgres
-# Create user adopisoft
-echo "Creating PostgreSQL user 'adopisoft'..."
-createuser --interactive
-# Create database named adopisoft
-echo "Creating PostgreSQL database 'adopisoft'..."
-createdb adopisoft
-psql
-
-# Testing connection
-echo "Testing PostgreSQL connection..."
-\conninfo
-
-# Exit Postgres prompt
-echo "Exiting PostgreSQL prompt..."
-\q
-
-# Login to Postgres with username adopisoft
-echo "Logging in to PostgreSQL with username 'adopisoft'..."
-sudo -u adopisoft psql
+# Switch over to Postgres account and create user/database
+echo -e "${GREEN}\nCreating PostgreSQL user 'adopisoft' and database...${NC}"
+sudo -u postgres createuser --interactive
+sudo -u postgres createdb adopisoft
 
 # Set password for user adopisoft
-echo "Setting password for PostgreSQL user 'adopisoft'..."
-\password adopisoft
-
-# Check connection information
-echo "Checking PostgreSQL connection information..."
-\conninfo
-
-# List all Postgres users
-echo "Listing all PostgreSQL users..."
-\du
-
-# Quit Postgres prompt
-echo "Quitting PostgreSQL prompt..."
-\q
+echo -e "${GREEN}\nSetting password for PostgreSQL user 'adopisoft'...${NC}"
+sudo -u postgres psql -c "ALTER USER adopisoft WITH PASSWORD 'adopisoft';"
 
 # Setting up pgadmin4
-echo "Setting up pgAdmin4..."
+echo -e "${GREEN}\nSetting up pgAdmin4...${NC}"
 
 # Setup the repository
-echo "Adding pgAdmin4 repository key..."
+echo -e "${GREEN}\nAdding pgAdmin4 repository key...${NC}"
 curl -fsS https://www.pgadmin.org/static/packages_pgadmin_org.pub | sudo gpg --dearmor -o /usr/share/keyrings/packages-pgadmin-org.gpg
-echo "Configuring pgAdmin4 repository..."
-sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/packages-pgadmin-org.gpg] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/$(lsb_release -cs) pgadmin4 main" > /etc/apt/sources.list.d/pgadmin4.list && apt update'
+echo -e "${GREEN}Configuring pgAdmin4 repository...${NC}"
+echo "deb [signed-by=/usr/share/keyrings/packages-pgadmin-org.gpg] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/$(lsb_release -cs) pgadmin4 main" | sudo tee -a /etc/apt/sources.list.d/pgadmin4.list
+sudo apt update > /dev/null 2>&1
 
 # Install pgAdmin
-echo "Installing pgAdmin4..."
-# Install for both desktop and web modes:
-sudo apt install -y pgadmin4
+echo -e "${GREEN}\nInstalling pgAdmin4...${NC}"
+sudo apt install -y pgadmin4 > /dev/null 2>&1
 
-# Install for desktop mode only:
-# sudo apt install pgadmin4-desktop
+# Configure the webserver
+echo -e "${GREEN}\nConfiguring pgAdmin4...${NC}"
+sudo /usr/pgadmin4/bin/setup-web.sh
 
-# Install for web mode only:
-# sudo apt install pgadmin4-web
-
-# Configure the webserver, if you installed pgadmin4-web:
-# sudo /usr/pgadmin4/bin/setup-web.sh
-
-# Enable UFW and open port 5432
-echo "Enabling UFW and opening port 5432..."
-sudo ufw enable
-sudo ufw allow 5432
-
-echo "Script execution completed successfully."
+# Script completion message
+echo -e "${GREEN}\nScript execution completed successfully.${NC}\n"
