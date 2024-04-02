@@ -1,4 +1,4 @@
-Installation script for centralized PostgreSQL server of AdoPisoft. <br>
+Installation script for centralized PostgreSQL server of AdoPisoft including pgadmin <br>
 Tested using Ubuntu 22.04<br>
 Copy and paste this 3 commands in the terminal<br><br>
 
