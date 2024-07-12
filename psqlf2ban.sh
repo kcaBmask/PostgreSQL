@@ -1,4 +1,3 @@
-# PostgreSQL
 #!/bin/bash
 
 # ANSI color codes
