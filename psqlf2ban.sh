@@ -102,7 +102,7 @@ sudo -u postgres createdb -p ${PORT} adopisoft
 
 # Securely set password for user adopisoft
 echo -e "${GREEN}\nSetting password for PostgreSQL user 'adopisoft'...${NC}"
-sudo -u postgres psql -p ${PORT} -c "ALTER USER adopisoft WITH PASSWORD  'AdoPisoft';"
+sudo -u postgres psql -p ${PORT} -c "ALTER USER adopisoft WITH PASSWORD  'adopisoft';"
 
 # Setting up pgAdmin4
 echo -e "${GREEN}\nSetting up pgAdmin4...${NC}"
