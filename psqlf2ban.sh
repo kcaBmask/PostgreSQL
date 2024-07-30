@@ -67,7 +67,7 @@ echo -e "${GREEN}\nEditing PostgreSQL configuration file...${NC}"
 sudo sed -i 's/#listen_addresses = .*/listen_addresses = '\''*'\''/' /etc/postgresql/12/main/postgresql.conf
 
 # Set custom port (e.g., 5433)
-PORT=49152
+PORT=5432
 sudo sed -i "s/^port = .*/port = ${PORT}/" /etc/postgresql/12/main/postgresql.conf
 
 # Adding log_connections and log_line_prefix directives
