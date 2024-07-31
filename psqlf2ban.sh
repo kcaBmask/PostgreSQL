@@ -48,9 +48,9 @@ sudo apt update > /dev/null 2>&1
 # Check and install missing packages
 for package in "${packages[@]}"; do
   if dpkg -l | grep -q "^ii  $package "; then
-    echo "$package is already installed."
+    continue
   else
-    echo "$package is not installed. Installing..."
+    echo "${GREEN}\nInstalling $package ...${NC}"
     sudo apt install -y "$package" > /dev/null 2>&1
   fi
 done
