@@ -8,5 +8,5 @@ bash postgresql.sh<br><br>
 Line 69, just replace whatever password you want for your database. Default: adopisoft<br>
 
 psqlf2ban.sh<br>
-Added fail2ban. Adding option to modify postgresql default port: 5432.You can modify on line 70.<br>
-Line 105, just replace whatever password you want for your database. Default: adopisoft<br>
+Added fail2ban option. There is a configuration where you can modify your database name, database user name and port inside the bash script<br>
+<br>
