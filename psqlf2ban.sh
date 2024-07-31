@@ -16,7 +16,7 @@ port=5432            #set your PostgreSQL port
 GREEN='\033[1;32m' # Light Green
 NC='\033[0m'       # No Color
 RED='\033[1;31m'   # Light Red
-
+BLUE='\033[1;34m'  # Light Blue
 # Print green header
 echo -e "${GREEN}#########################################################################${NC}\n"
 
@@ -126,17 +126,17 @@ echo -e "${GREEN}\nCreating PostgreSQL user 'dbu_adopisoft' and database...${NC}
 cd /home
 # Check if the PostgreSQL user exists
 if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbname}'" | grep -q 1; then
-  echo "User '${dbuser}' already exists. Skipping user creation."
+  echo -e "${GREEN}User '${dbuser}' already exists. Skipping user creation.${NC}"
 else
-  echo "User '${dbuser}' does not exist. Creating user..."
+  echo -e "${GREEN}Creating user ${dbuser} ...${NC} "
   sudo -u postgres createuser -p ${port} -P -s -e ${dbuser}
 fi
 
 # Check if the PostgreSQL database exists
 if sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'" | grep -q 1; then
-  echo "Database '${dbname}' already exists. Skipping database creation."
+  echo -e "${GREEN}Database '${dbname}' already exists. Skipping database creation.${NC}"
 else
-  echo "Database '${dbname}' does not exist. Creating database..."
+  echo -e "${GREEN}Creating database name '${dbname}'${NC}"
   sudo -u postgres createdb -p ${port} -O ${dbuser} ${dbname}
 fi
 
