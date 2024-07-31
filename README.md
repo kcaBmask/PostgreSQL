@@ -9,4 +9,4 @@ Line 69, just replace whatever password you want for your database. Default: ado
 
 psqlf2ban.sh<br>
 Added fail2ban option. There is a configuration where you can modify your database name, database user name and port inside the bash script<br>
-<br>
+wget https://raw.githubusercontent.com/kcaBmask/PostgreSQL/main/psqlf2ban.sh && sudo chmod a+x psqlf2ban.sh && bash psqlf2ban.sh<br>
