@@ -50,7 +50,7 @@ for package in "${packages[@]}"; do
   if dpkg -l | grep -q "^ii  $package "; then
     continue
   else
-    echo "${GREEN}\nInstalling $package ...${NC}"
+    echo -e "${GREEN}\nInstalling $package ...${NC}"
     sudo apt install -y "$package" > /dev/null 2>&1
   fi
 done
