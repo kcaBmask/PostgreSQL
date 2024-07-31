@@ -1,5 +1,16 @@
-# PostgreSQL
 #!/bin/bash
+
+##########################################################################################
+##                                   CONFIGURATIONS                                     ##
+##########################################################################################
+
+
+dbname=db_adopisoft  #set your database name
+dbuser=dbu_adopisoft #set your database user 
+port=5432            #set your PostgreSQL port
+
+
+##########################################################################################
 
 # ANSI color codes
 GREEN='\033[1;32m' # Light Green
@@ -10,24 +21,39 @@ RED='\033[1;31m'   # Light Red
 echo -e "${GREEN}#########################################################################${NC}\n"
 
 # Bash ASCII logo with green text and no background color
-echo -e "${GREEN}
- __                ___.                          __    
-|  | __ ____ _____ \\_ |__   _____ _____    _____|  | __
-|  |/ // ___\\__  \\ | __ \\ /     \\__  \\  /  ___/  |/ /
-|    <\\  \\___ / __ \\| \\_\\ \\  Y Y  \\/ __ \\_\\___ \\|    < 
-|__|_ \\___  >____  /___  /__|_|  (____  /____  >__|_ \\
-     \\/    \\/     \\/    \\/      \\/     \\/     \\/     \\/
+echo -e "${GREEN}         AdoPiSoft PostgreSQL Installation Script with fail2ban
+           
+
+               _            ______                     _    
+              | |           | ___ \\                   | |   
+              | | _____ __ _| |_/ /_ __ ___   __ _ ___| | __
+              | |/ / __/ _\` | ___ \\ '_ \` _ \\ / _\` / __| |/ /
+              |   < (_| (_| | |_/ / | | | | | (_| \\__ \\   < 
+              |_|\\_\\___\\__,_\\____/|_| |_| |_|\\__,_|___/_|\\_\\
+
 ${NC}"
+
 
 # Print green header
 echo -e "${GREEN}#########################################################################${NC}\n"
 
-# Script header with green text and no background color
-echo -e "${GREEN}\n=== PostgreSQL Installation and Configuration Script ===${NC}\n"
 
-# Add Official Repository
-echo -e "${GREEN}\nInstalling required packages...${NC}"
-sudo apt update > /dev/null 2>&1 && sudo apt install -y wget ca-certificates > /dev/null 2>&1
+# Define the packages to check
+packages=("wget" "ca-certificates" "curl" "gnupg" "gnupg2" "gnupg1")
+
+# Update package list
+echo -e "${GREEN}\nUpdating package list...${NC}"
+sudo apt update > /dev/null 2>&1
+
+# Check and install missing packages
+for package in "${packages[@]}"; do
+  if dpkg -l | grep -q "^ii  $package "; then
+    echo "$package is already installed."
+  else
+    echo "$package is not installed. Installing..."
+    sudo apt install -y "$package" > /dev/null 2>&1
+  fi
+done
 
 if [ $? -ne 0 ]; then
   echo -e "${RED}\nFailed to install required packages.${NC}"
@@ -35,7 +61,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo -e "${GREEN}\nAdding PostgreSQL official repository key...${NC}"
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/pgdg-archive-keyring.gpg
 
 if [ $? -ne 0 ]; then
   echo -e "${RED}\nFailed to add PostgreSQL official repository key.${NC}"
@@ -43,7 +69,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo -e "${GREEN}\nAdding PostgreSQL official repository to sources...${NC}"
-echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee -a /etc/apt/sources.list.d/pgdg.list > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/pgdg-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
 
 if [ $? -ne 0 ]; then
   echo -e "${RED}\nFailed to add PostgreSQL official repository to sources.${NC}"
@@ -67,8 +93,8 @@ echo -e "${GREEN}\nEditing PostgreSQL configuration file...${NC}"
 sudo sed -i 's/#listen_addresses = .*/listen_addresses = '\''*'\''/' /etc/postgresql/12/main/postgresql.conf
 
 # Set custom port (e.g., 5433)
-PORT=5432
-sudo sed -i "s/^port = .*/port = ${PORT}/" /etc/postgresql/12/main/postgresql.conf
+
+sudo sed -i "s/^port = .*/port = ${port}/" /etc/postgresql/12/main/postgresql.conf
 
 # Adding log_connections and log_line_prefix directives
 sudo bash -c 'cat >> /etc/postgresql/12/main/postgresql.conf' <<EOL
@@ -93,16 +119,31 @@ fi
 
 # Add sudo user adopisoft
 echo -e "${GREEN}\nAdding sudo user 'adopisoft'...${NC}"
-sudo adduser adopisoft
+sudo adduser --disabled-password --gecos "" adopisoft
 
 # Switch over to Postgres account and create user/database
-echo -e "${GREEN}\nCreating PostgreSQL user 'adopisoft' and database...${NC}"
-sudo -u postgres createuser -p ${PORT} --interactive
-sudo -u postgres createdb -p ${PORT} adopisoft
+echo -e "${GREEN}\nCreating PostgreSQL user 'dbu_adopisoft' and database...${NC}"
+cd /home
+# Check if the PostgreSQL user exists
+if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbname}'" | grep -q 1; then
+  echo "User '${dbuser}' already exists. Skipping user creation."
+else
+  echo "User '${dbuser}' does not exist. Creating user..."
+  sudo -u postgres createuser -p ${port} -P -s -e ${dbuser}
+fi
 
-# Securely set password for user adopisoft
-echo -e "${GREEN}\nSetting password for PostgreSQL user 'adopisoft'...${NC}"
-sudo -u postgres psql -p ${PORT} -c "ALTER USER adopisoft WITH PASSWORD  'adopisoft';"
+# Check if the PostgreSQL database exists
+if sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'" | grep -q 1; then
+  echo "Database '${dbname}' already exists. Skipping database creation."
+else
+  echo "Database '${dbname}' does not exist. Creating database..."
+  sudo -u postgres createdb -p ${port} -O ${dbuser} ${dbname}
+fi
+
+if [ $? -ne 0 ]; then
+  echo -e "${RED}\nFailed to create PostgreSQL user or database.${NC}"
+  exit 1
+fi
 
 # Setting up pgAdmin4
 echo -e "${GREEN}\nSetting up pgAdmin4...${NC}"
@@ -116,8 +157,8 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo -e "${GREEN}Configuring pgAdmin4 repository...${NC}"
-echo "deb [signed-by=/usr/share/keyrings/packages-pgadmin-org.gpg] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/$(lsb_release -cs) pgadmin4 main" | sudo tee -a /etc/apt/sources.list.d/pgadmin4.list > /dev/null
+echo -e "${GREEN}\nConfiguring pgAdmin4 repository...${NC}"
+echo "deb [signed-by=/usr/share/keyrings/packages-pgadmin-org.gpg] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/$(lsb_release -cs) pgadmin4 main" | sudo tee /etc/apt/sources.list.d/pgadmin4.list > /dev/null
 sudo apt update > /dev/null 2>&1
 
 if [ $? -ne 0 ]; then
@@ -168,7 +209,7 @@ backend = systemd
 
 [postgresql]
 enabled = true
-port = ${PORT}
+port = ${port}
 filter = postgresql
 logpath = /var/log/postgresql/postgresql-12-main.log
 maxretry = 3
