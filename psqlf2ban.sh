@@ -7,7 +7,7 @@
 dbname=db_adopisoft  # set your database name
 dbuser=dbu_adopisoft # set your database user 
 postvers=15          # set your PostgreSQL version
-port=5432           # set your PostgreSQL port
+port=5432            # set your PostgreSQL port
 
 ##########################################################################################
 
@@ -38,6 +38,15 @@ ${NC}"
 
 # Print green header
 echo -e "${GREEN}#########################################################################${NC}\n"
+
+# Check and set timezone to Asia/Manila
+current_timezone=$(timedatectl | grep "Time zone" | awk '{print $3}')
+if [ "$current_timezone" != "Asia/Manila" ]; then
+  echo -e "${GREEN}Setting timezone to Asia/Manila...${NC}"
+  sudo timedatectl set-timezone Asia/Manila
+else
+  echo -e "${GREEN}Timezone is already set to Asia/Manila.${NC}"
+fi
 
 # Check if configuration parameters are uncommented
 if [ -z "${dbname}" ] || [ -z "${dbuser}" ] || [ -z "${postvers}" ] || [ -z "${port}" ]; then
