@@ -4,11 +4,10 @@
 ##                                   CONFIGURATIONS                                     ##
 ##########################################################################################
 
-
-dbname=db_adopisoft  #set your database name
-dbuser=dbu_adopisoft #set your database user 
-port=5432            #set your PostgreSQL port
-
+dbname=db_adopisoft  # set your database name
+dbuser=dbu_adopisoft # set your database user 
+postvers=15          # set your PostgreSQL version
+port=59321           # set your PostgreSQL port
 
 ##########################################################################################
 
@@ -17,11 +16,15 @@ GREEN='\033[1;32m' # Light Green
 NC='\033[0m'       # No Color
 RED='\033[1;31m'   # Light Red
 BLUE='\033[1;34m'  # Light Blue
+
+# Store the script path
+script_path=$(realpath "$0")
+
 # Print green header
 echo -e "${GREEN}#########################################################################${NC}\n"
 
 # Bash ASCII logo with green text and no background color
-echo -e "${GREEN}         AdoPiSoft PostgreSQL Installation Script with fail2ban
+echo -e "${GREEN}                 AdoPiSoft PostgreSQL Installation Script
            
 
                _            ______                     _    
@@ -33,17 +36,21 @@ echo -e "${GREEN}         AdoPiSoft PostgreSQL Installation Script with fail2ban
 
 ${NC}"
 
-
 # Print green header
 echo -e "${GREEN}#########################################################################${NC}\n"
 
+# Check if configuration parameters are uncommented
+if [ -z "${dbname}" ] || [ -z "${dbuser}" ] || [ -z "${postvers}" ] || [ -z "${port}" ]; then
+  echo -e "${RED}Error: Configuration parameters are not set. Please uncomment and set the values for dbname, dbuser, postvers, and port.${NC}"
+  exit 1
+fi
 
 # Define the packages to check
 packages=("wget" "ca-certificates" "curl" "gnupg" "gnupg2" "gnupg1")
 
 # Update package list
 echo -e "${GREEN}\nUpdating package list...${NC}"
-sudo apt update > /dev/null 2>&1
+sudo DEBIAN_FRONTEND=noninteractive apt update > /dev/null 2>&1
 
 # Check and install missing packages
 for package in "${packages[@]}"; do
@@ -51,14 +58,13 @@ for package in "${packages[@]}"; do
     continue
   else
     echo -e "${GREEN}\nInstalling $package ...${NC}"
-    sudo apt install -y "$package" > /dev/null 2>&1
+    sudo DEBIAN_FRONTEND=noninteractive apt install -y "$package" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      echo -e "${RED}\nFailed to install $package.${NC}"
+      exit 1
+    fi
   fi
 done
-
-if [ $? -ne 0 ]; then
-  echo -e "${RED}\nFailed to install required packages.${NC}"
-  exit 1
-fi
 
 echo -e "${GREEN}\nAdding PostgreSQL official repository key...${NC}"
 wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/pgdg-archive-keyring.gpg
@@ -78,10 +84,10 @@ fi
 
 # Install Postgres
 echo -e "${GREEN}\nUpdating package list...${NC}"
-sudo apt update > /dev/null 2>&1
+sudo DEBIAN_FRONTEND=noninteractive apt update > /dev/null 2>&1
 
-echo -e "${GREEN}\nInstalling PostgreSQL 12 and PostgreSQL contrib...${NC}"
-sudo apt install -y postgresql-12 postgresql-contrib > /dev/null 2>&1
+echo -e "${GREEN}\nInstalling PostgreSQL ${postvers} and PostgreSQL contrib...${NC}"
+sudo DEBIAN_FRONTEND=noninteractive apt install -y postgresql-${postvers} postgresql-contrib > /dev/null 2>&1
 
 if [ $? -ne 0 ]; then
   echo -e "${RED}\nFailed to install PostgreSQL.${NC}"
@@ -90,14 +96,13 @@ fi
 
 # Editing postgres configuration file
 echo -e "${GREEN}\nEditing PostgreSQL configuration file...${NC}"
-sudo sed -i 's/#listen_addresses = .*/listen_addresses = '\''*'\''/' /etc/postgresql/12/main/postgresql.conf
+sudo sed -i "s/#listen_addresses = .*/listen_addresses = '*'/" /etc/postgresql/${postvers}/main/postgresql.conf
 
-# Set custom port (e.g., 5433)
-
-sudo sed -i "s/^port = .*/port = ${port}/" /etc/postgresql/12/main/postgresql.conf
+# Set custom port
+sudo sed -i "s/^port = .*/port = ${port}/" /etc/postgresql/${postvers}/main/postgresql.conf
 
 # Adding log_connections and log_line_prefix directives
-sudo bash -c 'cat >> /etc/postgresql/12/main/postgresql.conf' <<EOL
+sudo bash -c "cat >> /etc/postgresql/${postvers}/main/postgresql.conf" <<EOL
 
 # Custom log settings
 log_connections = on
@@ -106,7 +111,7 @@ EOL
 
 # Editing access policy
 echo -e "${GREEN}\nEditing PostgreSQL access policy...${NC}"
-echo "host all all 0.0.0.0/0 md5" | sudo tee -a /etc/postgresql/12/main/pg_hba.conf > /dev/null
+echo "host all all 0.0.0.0/0 md5" | sudo tee -a /etc/postgresql/${postvers}/main/pg_hba.conf > /dev/null
 
 # Restart postgres
 echo -e "${GREEN}\nRestarting PostgreSQL service...${NC}"
@@ -114,6 +119,14 @@ sudo systemctl restart postgresql
 
 if [ $? -ne 0 ]; then
   echo -e "${RED}\nFailed to restart PostgreSQL service.${NC}"
+  sudo systemctl status postgresql
+  exit 1
+fi
+
+# Verify PostgreSQL is running on the correct port
+pg_isready -p ${port}
+if [ $? -ne 0 ]; then
+  echo -e "${RED}\nPostgreSQL is not running on port ${port}. Please check the PostgreSQL service.${NC}"
   exit 1
 fi
 
@@ -124,25 +137,29 @@ sudo adduser --disabled-password --gecos "" adopisoft
 # Switch over to Postgres account and create user/database
 echo -e "${GREEN}\nCreating PostgreSQL user 'dbu_adopisoft' and database...${NC}"
 cd /home
+
 # Check if the PostgreSQL user exists
-if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbname}'" | grep -q 1; then
+if sudo -u postgres psql -p ${port} -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbuser}'" | grep -q 1; then
   echo -e "${GREEN}User '${dbuser}' already exists. Skipping user creation.${NC}"
 else
-  echo -e "${GREEN}Creating user ${dbuser} ...${NC} "
+  echo -e "${GREEN}Creating user ${dbuser} ...${NC}"
   sudo -u postgres createuser -p ${port} -P -s -e ${dbuser}
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}\nFailed to create PostgreSQL user.${NC}"
+    exit 1
+  fi
 fi
 
 # Check if the PostgreSQL database exists
-if sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'" | grep -q 1; then
+if sudo -u postgres psql -p ${port} -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'" | grep -q 1; then
   echo -e "${GREEN}Database '${dbname}' already exists. Skipping database creation.${NC}"
 else
   echo -e "${GREEN}Creating database name '${dbname}'${NC}"
   sudo -u postgres createdb -p ${port} -O ${dbuser} ${dbname}
-fi
-
-if [ $? -ne 0 ]; then
-  echo -e "${RED}\nFailed to create PostgreSQL user or database.${NC}"
-  exit 1
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}\nFailed to create PostgreSQL database.${NC}"
+    exit 1
+  fi
 fi
 
 # Setting up pgAdmin4
@@ -184,18 +201,21 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Install fail2ban
-echo -e "${GREEN}\nInstalling fail2ban...${NC}"
-sudo apt install -y fail2ban > /dev/null 2>&1
+# Ask if the user wants to install Fail2Ban
+read -p "Do you want to install Fail2Ban? (y/n): " install_fail2ban
+if [[ $install_fail2ban =~ ^[Yy]$ ]]; then
+  # Install fail2ban
+  echo -e "${GREEN}\nInstalling fail2ban...${NC}"
+  sudo apt install -y fail2ban > /dev/null 2>&1
 
-if [ $? -ne 0 ]; then
-  echo -e "${RED}\nFailed to install fail2ban.${NC}"
-  exit 1
-fi
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}\nFailed to install fail2ban.${NC}"
+    exit 1
+  fi
 
-# Create a custom fail2ban jail for PostgreSQL and SSH
-echo -e "${GREEN}\nConfiguring fail2ban for PostgreSQL and SSH...${NC}"
-sudo bash -c 'cat > /etc/fail2ban/jail.local' <<EOL
+  # Create a custom fail2ban jail for PostgreSQL and SSH
+  echo -e "${GREEN}\nConfiguring fail2ban for PostgreSQL and SSH...${NC}"
+  sudo bash -c 'cat > /etc/fail2ban/jail.local' <<EOL
 [DEFAULT]
 bantime = 1h
 findtime = 10m
@@ -215,19 +235,35 @@ logpath = /var/log/postgresql/postgresql-12-main.log
 maxretry = 3
 EOL
 
-# Create the filter for PostgreSQL
-sudo bash -c 'cat > /etc/fail2ban/filter.d/postgresql.conf' <<EOL
+  # Create the filter for PostgreSQL
+  sudo bash -c 'cat > /etc/fail2ban/filter.d/postgresql.conf' <<EOL
 [Definition]
 failregex = \{<HOST>\} .+? FATAL:  password authentication failed for user .+$
 EOL
 
-# Restart fail2ban service
-echo -e "${GREEN}\nRestarting fail2ban service...${NC}"
-sudo systemctl restart fail2ban
+  # Restart fail2ban service
+  echo -e "${GREEN}\nRestarting fail2ban service...${NC}"
+  sudo systemctl restart fail2ban
 
-if [ $? -ne 0 ]; then
-  echo -e "${RED}\nFailed to restart fail2ban service.${NC}"
-  exit 1
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}\nFailed to restart fail2ban service.${NC}"
+    exit 1
+  fi
+else
+  echo -e "${BLUE}\nSkipping Fail2Ban installation.${NC}"
+fi
+
+# Ask if the user wants to remove this script
+read -p "Do you want to remove this script? (y/n): " remove_script
+if [[ $remove_script =~ ^[Yy]$ ]]; then
+  echo -e "${GREEN}\nRemoving script...${NC}"
+  rm -- "$script_path"
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}\nFailed to remove the script.${NC}"
+    exit 1
+  fi
+else
+  echo -e "${BLUE}\nSkipping script removal.${NC}"
 fi
 
 # Script completion message
