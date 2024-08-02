@@ -7,7 +7,7 @@
 dbname=db_adopisoft  # set your database name
 dbuser=dbu_adopisoft # set your database user 
 postvers=15          # set your PostgreSQL version
-port=59321           # set your PostgreSQL port
+port=5432           # set your PostgreSQL port
 
 ##########################################################################################
 
@@ -135,7 +135,7 @@ echo -e "${GREEN}\nAdding sudo user 'adopisoft'...${NC}"
 sudo adduser --disabled-password --gecos "" adopisoft
 
 # Switch over to Postgres account and create user/database
-echo -e "${GREEN}\nCreating PostgreSQL user 'dbu_adopisoft' and database...${NC}"
+echo -e "${GREEN}\nCreating PostgreSQL user '${dbuser}' and database '${dbname}'...${NC}"
 cd /home
 
 # Check if the PostgreSQL user exists
@@ -204,7 +204,8 @@ fi
 # Ask if the user wants to install Fail2Ban
 read -p "Do you want to install Fail2Ban? (y/n): " install_fail2ban
 if [[ $install_fail2ban =~ ^[Yy]$ ]]; then
-  # Install fail2ban
+  
+# Install fail2ban
   echo -e "${GREEN}\nInstalling fail2ban...${NC}"
   sudo apt install -y fail2ban > /dev/null 2>&1
 
@@ -213,7 +214,7 @@ if [[ $install_fail2ban =~ ^[Yy]$ ]]; then
     exit 1
   fi
 
-  # Create a custom fail2ban jail for PostgreSQL and SSH
+# Create a custom fail2ban jail for PostgreSQL and SSH
   echo -e "${GREEN}\nConfiguring fail2ban for PostgreSQL and SSH...${NC}"
   sudo bash -c 'cat > /etc/fail2ban/jail.local' <<EOL
 [DEFAULT]
@@ -231,17 +232,17 @@ backend = systemd
 enabled = true
 port = ${port}
 filter = postgresql
-logpath = /var/log/postgresql/postgresql-12-main.log
+logpath = /var/log/postgresql/postgresql-${postvers}-main.log
 maxretry = 3
 EOL
 
-  # Create the filter for PostgreSQL
+# Create the filter for PostgreSQL
   sudo bash -c 'cat > /etc/fail2ban/filter.d/postgresql.conf' <<EOL
 [Definition]
 failregex = \{<HOST>\} .+? FATAL:  password authentication failed for user .+$
 EOL
 
-  # Restart fail2ban service
+# Restart fail2ban service
   echo -e "${GREEN}\nRestarting fail2ban service...${NC}"
   sudo systemctl restart fail2ban
 
