@@ -255,7 +255,7 @@ else
 fi
 
 # Ask if the user wants to remove this script
-read -p "Do you want to remove this script? (y/n): " remove_script
+read -p "Do you want to remove this script after the installation? (y/n): " remove_script
 if [[ $remove_script =~ ^[Yy]$ ]]; then
   echo -e "${GREEN}\nRemoving script...${NC}"
   rm -- "$script_path"
