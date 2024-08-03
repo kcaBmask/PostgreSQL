@@ -251,6 +251,11 @@ EOL
 failregex = \{<HOST>\} .+? FATAL:  password authentication failed for user .+$
 EOL
 
+# Enable Fail2ban to start on boot
+echo -e "${BOLD}Enabling Fail2ban to start on boot...${NC}"
+sudo systemctl enable fail2ban  >/dev/null 2>&1
+check_status
+
 # Restart fail2ban service
   echo -e "${GREEN}\nRestarting fail2ban service...${NC}"
   sudo systemctl restart fail2ban
