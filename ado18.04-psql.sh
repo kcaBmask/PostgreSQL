@@ -2,21 +2,11 @@
 
 
 # Download PostgreSQL signing key
-print_bold "Downloading PostgreSQL key..."
-if wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -; then
-    print_bold "PostgreSQL key added successfully."
-else
-    print_error "Failed to add PostgreSQL key."
-    exit 1
-fi
+
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 # Add PostgreSQL repository
-print_bold "Adding PostgreSQL repository..."
-if sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" > /etc/apt/sources.list.d/pgdg.list'; then
-    print_bold "PostgreSQL repository added successfully."
-else
-    print_error "Failed to add PostgreSQL repository."
-    exit 1
-fi
+
+sudo sh -c 'echo "deb https://apt-archive.postgresql.org/pub/repos/apt bionic-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 echo "Installing netstat"
 sudo apt-get install net-tools
 
