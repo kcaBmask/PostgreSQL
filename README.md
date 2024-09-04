@@ -10,4 +10,5 @@ sudo chmod a+x psqlf2ban.sh <br>
 bash psqlf2ban.sh<br>
 
 <b>dbbackup.sh</b><br>
-Autoback up database using crontab.
+Database back up crontab. You can use the AdoPIsoft schedule (cron) to automate the script. <br>
+Be sure to edit the configuration and make the script executable.
