@@ -4,10 +4,10 @@
 ##                                   CONFIGURATIONS                                     ##
 ##########################################################################################
 
-dbname=db_adopisoft  # set your database name
-dbuser=dbu_adopisoft # set your database user 
-postvers=15          # set your PostgreSQL version
-port=5432            # set your PostgreSQL port
+#dbname=db_adopisoft  # set your database name
+#dbuser=dbu_adopisoft # set your database user 
+#postvers=15          # set your PostgreSQL version
+#port=5432            # set your PostgreSQL port
 
 ##########################################################################################
 
