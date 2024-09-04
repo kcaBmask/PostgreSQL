@@ -9,6 +9,6 @@ wget https://raw.githubusercontent.com/kcaBmask/PostgreSQL/main/psqlf2ban.sh<br>
 sudo chmod a+x psqlf2ban.sh <br>
 bash psqlf2ban.sh<br>
 
-<b>dbbackup.sh</b><br>
+<b>pg_backup.sh</b><br>
 Database back up crontab. You can use the AdoPIsoft schedule (cron) to automate the script. <br>
 Be sure to edit the configuration and make the script executable.
