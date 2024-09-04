@@ -4,7 +4,7 @@ Copy and paste the 3 commands in the terminal<br><br>
 
 <b>psqlf2ban.sh</b><br>
 <br>
-Added fail2ban option. There is a configuration where you can modify your database name, database user name and port inside the bash script. <b>Don't forget to edit the configuration file.<b><br>
+Added fail2ban option. There is a configuration where you can modify your database name, database user name and port inside the bash script. <b>Don't forget to edit the configuration file.</b><br>
 wget https://raw.githubusercontent.com/kcaBmask/PostgreSQL/main/psqlf2ban.sh<br>
 sudo chmod a+x psqlf2ban.sh <br>
 bash psqlf2ban.sh<br>
